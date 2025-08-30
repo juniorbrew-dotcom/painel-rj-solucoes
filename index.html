@@ -105,20 +105,21 @@
     historicoSalvo.forEach(h => renderHistorico(h.nome, h.valor, h.vencimento, h.whatsapp, h.tipo, h.data));
   };
 
-  function salvarClientes() {
-    const clientes = [];
-    document.querySelectorAll(".cliente-card").forEach(card => {
-      const nome = card.querySelector("p:nth-child(1)").innerText.replace("Nome: ", "");
-      const valor = card.querySelector(".valor").innerText;
-      const vencimento = card.querySelector(".vencimento").innerText;
-      const whatsapp = card.querySelector("p:nth-child(4)").innerText.replace("WhatsApp: ", "");
-      const hoje = new Date();
-      const vencDate = new Date(vencimento.split("/").reverse().join("-"));
-      const tipo = vencDate < hoje ? "cobranca" : "lembrete";
-      clientes.push({ nome, valor, vencimento, whatsapp, tipo });
-    });
-    localStorage.setItem("clientes", JSON.stringify(clientes));
-  }
+function salvarClientes() {
+  const clientes = [];
+  document.querySelectorAll(".cliente-card").forEach(card => {
+    const nome = card.querySelector(".nome").textContent;
+    const valor = card.querySelector(".valor").textContent;
+    const vencimento = card.querySelector(".vencimento").textContent;
+    const whatsapp = card.querySelector(".whats").textContent;
+
+    const vencDate = new Date(vencimento.split('/').reverse().join('-'));
+    const tipo = vencDate < new Date() ? "cobranca" : "lembrete";
+
+    clientes.push({ nome, valor, vencimento, whatsapp, tipo });
+  });
+  localStorage.setItem("clientes", JSON.stringify(clientes));
+}
 
   function salvarHistorico() {
     const historico = [];
@@ -166,42 +167,51 @@
     document.getElementById("whatsapp").value = "";
   }
 
-  function renderCliente(nome, valor, vencimento, whatsapp, tipo) {
-    const card = document.createElement("div");
-    card.className = "cliente-card";
-    card.innerHTML = `
-      <p><strong>Nome:</strong> ${nome}</p>
-      <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
-      <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
-      <p><strong>WhatsApp:</strong> ${whatsapp}</p>
-      <button onclick="enviarMensagem('${nome}', '${valor}', '${vencimento}', '${whatsapp}', '${tipo}')">Enviar Mensagem</button>
-      <button onclick="editarCliente(this)">Editar</button>
-    `;
-    lista.appendChild(card);
-  }
+function renderCliente(nome, valor, vencimento, whatsapp, tipo) {
+  const card = document.createElement("div");
+  card.className = "cliente-card";
+  card.innerHTML = `
+    <p><strong>Nome:</strong> <span class="nome">${nome}</span></p>
+    <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
+    <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
+    <p><strong>WhatsApp:</strong> <span class="whats">${whatsapp}</span></p>
+    <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
+    <button onclick="editarCliente(this)">Editar</button>
+  `;
+  lista.appendChild(card);
+}
+function editarCliente(botao) {
+  const card = botao.parentElement;
+  const valorSpan = card.querySelector(".valor");
+  const vencSpan = card.querySelector(".vencimento");
+  const editando = botao.dataset.editing === "1";
 
-  function editarCliente(botao) {
-    const card = botao.parentElement;
-    const valorSpan = card.querySelector(".valor");
-    const vencSpan = card.querySelector(".vencimento");
+  if (!editando) {
+    const valorNum = valorSpan.textContent.replace(/[^\d,.-]/g, '').replace(',', '.');
+    const vencISO = vencSpan.textContent.split('/').reverse().join('-');
 
-    valorSpan.innerHTML = `<input type="number" value="${valorSpan.innerText.replace(/[^\d,.-]/g, '')}">`;
-    vencSpan.innerHTML = `<input type="date" value="${vencSpan.innerText.split('/').reverse().join('-')}">`;
+    valorSpan.innerHTML = `<input type="number" step="0.01" value="${isNaN(parseFloat(valorNum)) ? '' : parseFloat(valorNum)}">`;
+    vencSpan.innerHTML = `<input type="date" value="${vencISO}">`;
 
     botao.textContent = "Salvar";
-    botao.onclick = function() {
-      const novoValor = parseFloat(valorSpan.querySelector("input").value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      const novoVenc = vencSpan.querySelector("input").value.split("-").reverse().join("/");
+    botao.dataset.editing = "1";
+  } else {
+    const valorInput = valorSpan.querySelector("input");
+    const vencInput = vencSpan.querySelector("input");
 
-      valorSpan.textContent = novoValor;
-      vencSpan.textContent = novoVenc;
+    const valorNovoNumero = parseFloat(valorInput.value || "0");
+    const valorNovoFmt = valorNovoNumero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const vencNovoFmt = (vencInput.value || '').split('-').reverse().join('/');
 
-      salvarClientes();
+    valorSpan.textContent = valorNovoFmt;
+    vencSpan.textContent = vencNovoFmt;
 
-      botao.textContent = "Editar";
-      botao.onclick = function() { editarCliente(botao); };
-    };
+    botao.textContent = "Editar";
+    botao.dataset.editing = "0";
+
+    salvarClientes(); // persiste no localStorage
   }
+}
 
   function renderHistorico(nome, valor, vencimento, whatsapp, tipo, data) {
     const linha = document.createElement("tr");
@@ -266,18 +276,30 @@
     }
   }
 
-  function enviarMensagem(nome, valor, vencimento, whatsapp, tipo) {
-    const mensagem = tipo === "cobranca"
-      ? `Olá ${nome}, sua fatura de ${valor} venceu em ${vencimento}. Por favor, regularize o pagamento.`
-      : `Olá ${nome}, lembramos que sua fatura de ${valor} vence em ${vencimento}.`;
+function enviarMensagemCliente(botaoOuCard) {
+  const card = botaoOuCard.classList?.contains('cliente-card') ? botaoOuCard : botaoOuCard.parentElement;
 
-    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, "_blank");
+  const nome = card.querySelector(".nome").textContent;
+  const valor = card.querySelector(".valor").textContent;
+  const vencimento = card.querySelector(".vencimento").textContent;
+  const whatsapp = card.querySelector(".whats").textContent;
 
-    const dataHora = new Date().toLocaleString("pt-BR");
-    renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
-    salvarHistorico();
-  }
+  const vencDate = new Date(vencimento.split('/').reverse().join('-'));
+  const hoje = new Date();
+  const tipo = vencDate < new Date(hoje.toDateString()) ? "cobranca" : "lembrete";
+
+  const mensagem = tipo === "cobranca"
+    ? `Olá ${nome}, sua fatura de ${valor} venceu em ${vencimento}. Por favor, regularize o pagamento.`
+    : `Olá ${nome}, lembramos que sua fatura de ${valor} vence em ${vencimento}.`;
+
+  const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, "_blank");
+
+  const dataHora = new Date().toLocaleString("pt-BR");
+  renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
+  salvarHistorico();
+}
 </script>
 </body>
 </html>
+
