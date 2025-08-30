@@ -1,10 +1,10 @@
-const CACHE_NAME = 'painel-rj-v1';
+const CACHE_NAME = 'painel-rj-solucoes-v1';
 const URLS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/painel-rj-solucoes/',
+  '/painel-rj-solucoes/index.html',
+  '/painel-rj-solucoes/manifest.json',
+  '/painel-rj-solucoes/icon-192.png',
+  '/painel-rj-solucoes/icon-512.png'
 ];
 
 // Instala o Service Worker e armazena arquivos
