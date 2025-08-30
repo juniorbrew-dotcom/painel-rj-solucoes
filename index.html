@@ -50,7 +50,35 @@
   <div class="clientes" id="listaClientes">
     <h3>Clientes cadastrados</h3>
   </div>
+<div class="historico">
+  <h3>Histórico de Envios</h3>
 
+  <!-- Filtro por data -->
+  <div class="filtro-historico">
+    <label>De: <input type="date" id="filtroInicio"></label>
+    <label>Até: <input type="date" id="filtroFim"></label>
+    <button onclick="filtrarHistorico()">Filtrar</button>
+    <button onclick="limparFiltro()">Limpar</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Valor</th>
+        <th>Vencimento</th>
+        <th>WhatsApp</th>
+        <th>Tipo</th>
+        <th>Data/Hora</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaHistorico"></tbody>
+  </table>
+  <div class="historico-buttons">
+    <button onclick="exportarCSV()">Exportar CSV</button>
+    <button onclick="limparHistorico()">Limpar Histórico</button>
+  </div>
+</div>
   <div class="historico">
     <h3>Histórico de Envios</h3>
     <table>
@@ -247,3 +275,4 @@ BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
   <label>Até: <input type="date" id="filtroFim"></label>
   <button onclick="filtrarHistorico()">Filtrar</button>
 </div>
+
