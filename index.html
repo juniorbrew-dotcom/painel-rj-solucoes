@@ -141,8 +141,86 @@
       <button onclick="limparHistorico()">Limpar Histórico</button>
     </div>
   </div>
+
   <script>
-    // Funções para manipular clientes e histórico, conforme o código anterior
+    const lista = document.getElementById("listaClientes");
+    const tabela = document.getElementById("tabelaHistorico");
+
+    // Funções auxiliares
+    function parseBRDateToISO(br) {
+      if (!br) return "";
+      const [d, m, y] = br.split("/");
+      return `${y}-${m}-${d}`;
+    }
+    function startOfDay(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    function toBRL(n) {
+      return Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    function onlyDigits(s) {
+      return (s || "").replace(/\D/g, "");
+    }
+
+    // Adicionar cliente
+    function adicionarCliente() {
+      const nome = document.getElementById("nome").value.trim();
+      const valorInput = document.getElementById("valor").value.trim();
+      const vencimentoISO = document.getElementById("vencimento").value;
+      const whatsapp = onlyDigits(document.getElementById("whatsapp").value.trim());
+
+      if (!nome || !valorInput || !vencimentoISO || !whatsapp) {
+        alert("Preencha todos os campos.");
+        return;
+      }
+
+      const vencFormatado = vencimentoISO.split("-").reverse().join("/");
+      const valorNumerico = parseFloat(valorInput.replace(",", "."));
+      const valorFormatado = toBRL(valorNumerico);
+
+      const tipo = startOfDay(new Date(vencimentoISO)) < startOfDay(new Date()) ? "cobranca" : "lembrete";
+
+      renderCliente(nome, valorFormatado, vencFormatado, whatsapp, tipo);
+      salvarClientes();
+
+      document.getElementById("nome").value = "";
+      document.getElementById("valor").value = "";
+      document.getElementById("vencimento").value = "";
+      document.getElementById("whatsapp").value = "";
+    }
+
+    // Renderizar cliente
+    function renderCliente(nome, valor, vencimento, whatsapp, tipo) {
+      const card = document.createElement("div");
+      card.className = "cliente-card";
+      card.innerHTML = `
+        <p><strong>Nome:</strong> <span class="nome">${nome}</span></p>
+        <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
+        <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
+        <p><strong>WhatsApp:</strong> <span class="whats">${whatsapp}</span></p>
+        <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
+        <button onclick="editarCliente(this)">Editar</button>
+        <button onclick="excluirCliente(this)" class="btn-danger">Excluir</button>
+      `;
+      lista.appendChild(card);
+    }
+
+    // Salvar clientes no localStorage
+    function salvarClientes() {
+      const clientes = [];
+      document.querySelectorAll(".cliente-card").forEach(card => {
+        const nome = card.querySelector(".nome").textContent;
+        const valor = card.querySelector(".valor").textContent;
+        const vencimento = card.querySelector(".vencimento").textContent;
+        const whatsapp = card.querySelector(".whats").textContent;
+
+        const tipo = startOfDay(new Date(parseBRDateToISO(vencimento))) < startOfDay(new Date()) ? "cobranca" : "lembrete";
+        clientes.push({ nome, valor, vencimento, whatsapp, tipo });
+      });
+      localStorage.setItem("clientes", JSON.stringify(clientes));
+    }
   </script>
 
 </body>
