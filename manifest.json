@@ -1,9 +1,9 @@
 {
   "name": "Painel de Cobrança RJ Soluções",
-  "short_name": "RJ Soluções",
-  "start_url": "index.html",
+  "short_name": "Cobrança RJ",
+  "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#f4f6f8",
+  "background_color": "#ffffff",
   "theme_color": "#0078D7",
   "icons": [
     {
