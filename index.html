@@ -28,6 +28,9 @@
       border: 1px solid #ddd; padding: 10px;
       margin-top: 10px; border-radius: 4px; background: #fafafa;
     }
+    .cliente-card button + button { margin-left: 8px; }
+    .btn-danger { background: #d9534f; }
+    .btn-danger:hover { background: #b84541; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background: #f0f0f0; }
@@ -56,7 +59,7 @@
     <input type="date" id="vencimento">
 
     <label>WhatsApp (somente números):</label>
-    <input type="text" id="whatsapp">
+    <input type="text" id="whatsapp" placeholder="DDD + número, ex: 73999999999">
 
     <button onclick="adicionarCliente()">Adicionar Cliente</button>
   </div>
@@ -68,7 +71,6 @@
   <div class="historico">
     <h3>Histórico de Envios</h3>
 
-    <!-- Filtro por data -->
     <div class="filtro-historico">
       <label>De: <input type="date" id="filtroInicio"></label>
       <label>Até: <input type="date" id="filtroFim"></label>
@@ -89,6 +91,7 @@
       </thead>
       <tbody id="tabelaHistorico"></tbody>
     </table>
+
     <div class="historico-buttons">
       <button onclick="exportarCSV()">Exportar CSV</button>
       <button onclick="limparHistorico()">Limpar Histórico</button>
@@ -98,6 +101,24 @@
   const lista = document.getElementById("listaClientes");
   const tabela = document.getElementById("tabelaHistorico");
 
+  // Helpers
+  function parseBRDateToISO(br) {
+    // dd/mm/aaaa -> aaaa-mm-dd
+    if (!br) return "";
+    const [d,m,y] = br.split("/");
+    return `${y}-${m}-${d}`;
+  }
+  function startOfDay(date) {
+    const d = new Date(date);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function toBRL(n) {
+    return Number(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  function onlyDigits(s) { return (s || "").replace(/\D/g, ""); }
+
+  // Inicialização
   window.onload = () => {
     const clientesSalvos = JSON.parse(localStorage.getItem("clientes")) || [];
     const historicoSalvo = JSON.parse(localStorage.getItem("historico")) || [];
@@ -105,21 +126,119 @@
     historicoSalvo.forEach(h => renderHistorico(h.nome, h.valor, h.vencimento, h.whatsapp, h.tipo, h.data));
   };
 
-function salvarClientes() {
-  const clientes = [];
-  document.querySelectorAll(".cliente-card").forEach(card => {
-    const nome = card.querySelector(".nome").textContent;
-    const valor = card.querySelector(".valor").textContent;
-    const vencimento = card.querySelector(".vencimento").textContent;
-    const whatsapp = card.querySelector(".whats").textContent;
+  // Clientes
+  function adicionarCliente() {
+    const nome = document.getElementById("nome").value.trim();
+    const valorInput = document.getElementById("valor").value.trim();
+    const vencimentoISO = document.getElementById("vencimento").value;
+    const whatsapp = onlyDigits(document.getElementById("whatsapp").value.trim());
 
-    const vencDate = new Date(vencimento.split('/').reverse().join('-'));
-    const tipo = vencDate < new Date() ? "cobranca" : "lembrete";
+    if (!nome || !valorInput || !vencimentoISO || !whatsapp) {
+      alert("Preencha todos os campos.");
+      return;
+    }
 
-    clientes.push({ nome, valor, vencimento, whatsapp, tipo });
-  });
-  localStorage.setItem("clientes", JSON.stringify(clientes));
-}
+    const vencFormatado = vencimentoISO.split("-").reverse().join("/");
+    const valorNumerico = parseFloat(valorInput.replace(",", "."));
+    const valorFormatado = toBRL(valorNumerico);
+
+    const tipo = startOfDay(new Date(vencimentoISO)) < startOfDay(new Date()) ? "cobranca" : "lembrete";
+
+    renderCliente(nome, valorFormatado, vencFormatado, whatsapp, tipo);
+    salvarClientes();
+
+    document.getElementById("nome").value = "";
+    document.getElementById("valor").value = "";
+    document.getElementById("vencimento").value = "";
+    document.getElementById("whatsapp").value = "";
+  }
+
+  function renderCliente(nome, valor, vencimento, whatsapp, tipo) {
+    const card = document.createElement("div");
+    card.className = "cliente-card";
+    card.innerHTML = `
+      <p><strong>Nome:</strong> <span class="nome">${nome}</span></p>
+      <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
+      <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
+      <p><strong>WhatsApp:</strong> <span class="whats">${whatsapp}</span></p>
+      <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
+      <button onclick="editarCliente(this)">Editar</button>
+      <button onclick="excluirCliente(this)" class="btn-danger">Excluir</button>
+    `;
+    lista.appendChild(card);
+  }
+
+  function editarCliente(botao) {
+    const card = botao.parentElement;
+    const valorSpan = card.querySelector(".valor");
+    const vencSpan = card.querySelector(".vencimento");
+
+    const editando = botao.dataset.editing === "1";
+    if (!editando) {
+      const valorNum = valorSpan.textContent.replace(/[^\d,.-]/g, '').replace(',', '.');
+      const vencISO = parseBRDateToISO(vencSpan.textContent);
+
+      valorSpan.innerHTML = `<input type="number" step="0.01" value="${isNaN(parseFloat(valorNum)) ? '' : parseFloat(valorNum)}">`;
+      vencSpan.innerHTML = `<input type="date" value="${vencISO}">`;
+
+      botao.textContent = "Salvar";
+      botao.dataset.editing = "1";
+    } else {
+      const valorInput = valorSpan.querySelector("input");
+      const vencInput = vencSpan.querySelector("input");
+
+      const valorNovoNumero = parseFloat((valorInput.value || "0").replace(",", "."));
+      const valorNovoFmt = toBRL(isNaN(valorNovoNumero) ? 0 : valorNovoNumero);
+      const vencNovoISO = vencInput.value || "";
+      const vencNovoFmt = vencNovoISO ? vencNovoISO.split('-').reverse().join('/') : "";
+
+      if (!vencNovoISO) { alert("Informe um vencimento válido."); return; }
+
+      valorSpan.textContent = valorNovoFmt;
+      vencSpan.textContent = vencNovoFmt;
+
+      botao.textContent = "Editar";
+      botao.dataset.editing = "0";
+
+      salvarClientes();
+    }
+  }
+
+  function excluirCliente(botao) {
+    if (confirm("Tem certeza que deseja excluir este cliente?")) {
+      const card = botao.parentElement;
+      card.remove();
+      salvarClientes();
+    }
+  }
+
+  function salvarClientes() {
+    const clientes = [];
+    document.querySelectorAll(".cliente-card").forEach(card => {
+      const nome = card.querySelector(".nome").textContent;
+      const valor = card.querySelector(".valor").textContent;
+      const vencimento = card.querySelector(".vencimento").textContent;
+      const whatsapp = card.querySelector(".whats").textContent;
+
+      const tipo = startOfDay(new Date(parseBRDateToISO(vencimento))) < startOfDay(new Date()) ? "cobranca" : "lembrete";
+      clientes.push({ nome, valor, vencimento, whatsapp, tipo });
+    });
+    localStorage.setItem("clientes", JSON.stringify(clientes));
+  }
+
+  // Histórico
+  function renderHistorico(nome, valor, vencimento, whatsapp, tipo, data) {
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td>${nome}</td>
+      <td>${valor}</td>
+      <td>${vencimento}</td>
+      <td>${whatsapp}</td>
+      <td>${tipo === "cobranca" ? "Cobrança" : "Lembrete"}</td>
+      <td>${data}</td>
+    `;
+    tabela.appendChild(linha);
+  }
 
   function salvarHistorico() {
     const historico = [];
@@ -139,107 +258,42 @@ function salvarClientes() {
     localStorage.setItem("historico", JSON.stringify(historico));
   }
 
-  function adicionarCliente() {
-    const nome = document.getElementById("nome").value.trim();
-    const valorInput = document.getElementById("valor").value.trim();
-    const vencimento = document.getElementById("vencimento").value;
-    const whatsapp = document.getElementById("whatsapp").value.trim();
+  function enviarMensagemCliente(botao) {
+    const card = botao.parentElement;
+    const nome = card.querySelector(".nome").textContent;
+    const valor = card.querySelector(".valor").textContent;
+    const vencimento = card.querySelector(".vencimento").textContent;
+    const whatsapp = onlyDigits(card.querySelector(".whats").textContent);
 
-    if (!nome || !valorInput || !vencimento || !whatsapp) {
-      alert("Preencha todos os campos.");
-      return;
-    }
+    const tipo = startOfDay(new Date(parseBRDateToISO(vencimento))) < startOfDay(new Date()) ? "cobranca" : "lembrete";
 
-    const vencFormatado = vencimento.split("-").reverse().join("/");
-    const valorNumerico = parseFloat(valorInput.replace(",", "."));
-    const valorFormatado = valorNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const mensagem = tipo === "cobranca"
+      ? `Olá ${nome}, sua fatura de ${valor} venceu em ${vencimento}. Por favor, regularize o pagamento.`
+      : `Olá ${nome}, lembramos que sua fatura de ${valor} vence em ${vencimento}.`;
 
-    const hoje = new Date();
-    const vencDate = new Date(vencimento);
-    const tipo = vencDate < hoje ? "cobranca" : "lembrete";
+    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, "_blank");
 
-    renderCliente(nome, valorFormatado, vencFormatado, whatsapp, tipo);
-    salvarClientes();
-
-    document.getElementById("nome").value = "";
-    document.getElementById("valor").value = "";
-    document.getElementById("vencimento").value = "";
-    document.getElementById("whatsapp").value = "";
+    const dataHora = new Date().toLocaleString("pt-BR");
+    renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
+    salvarHistorico();
   }
 
-function renderCliente(nome, valor, vencimento, whatsapp, tipo) {
-  const card = document.createElement("div");
-  card.className = "cliente-card";
-  card.innerHTML = `
-    <p><strong>Nome:</strong> <span class="nome">${nome}</span></p>
-    <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
-    <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
-    <p><strong>WhatsApp:</strong> <span class="whats">${whatsapp}</span></p>
-    <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
-    <button onclick="editarCliente(this)">Editar</button>
-  `;
-  lista.appendChild(card);
-}
-function editarCliente(botao) {
-  const card = botao.parentElement;
-  const valorSpan = card.querySelector(".valor");
-  const vencSpan = card.querySelector(".vencimento");
-  const editando = botao.dataset.editing === "1";
-
-  if (!editando) {
-    const valorNum = valorSpan.textContent.replace(/[^\d,.-]/g, '').replace(',', '.');
-    const vencISO = vencSpan.textContent.split('/').reverse().join('-');
-
-    valorSpan.innerHTML = `<input type="number" step="0.01" value="${isNaN(parseFloat(valorNum)) ? '' : parseFloat(valorNum)}">`;
-    vencSpan.innerHTML = `<input type="date" value="${vencISO}">`;
-
-    botao.textContent = "Salvar";
-    botao.dataset.editing = "1";
-  } else {
-    const valorInput = valorSpan.querySelector("input");
-    const vencInput = vencSpan.querySelector("input");
-
-    const valorNovoNumero = parseFloat(valorInput.value || "0");
-    const valorNovoFmt = valorNovoNumero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const vencNovoFmt = (vencInput.value || '').split('-').reverse().join('/');
-
-    valorSpan.textContent = valorNovoFmt;
-    vencSpan.textContent = vencNovoFmt;
-
-    botao.textContent = "Editar";
-    botao.dataset.editing = "0";
-
-    salvarClientes(); // persiste no localStorage
-  }
-}
-
-  function renderHistorico(nome, valor, vencimento, whatsapp, tipo, data) {
-    const linha = document.createElement("tr");
-    linha.innerHTML = `
-      <td>${nome}</td>
-      <td>${valor}</td>
-      <td>${vencimento}</td>
-      <td>${whatsapp}</td>
-      <td>${tipo === "cobranca" ? "Cobrança" : "Lembrete"}</td>
-      <td>${data}</td>
-    `;
-    tabela.appendChild(linha);
-  }
-
+  // Filtro do histórico
   function filtrarHistorico() {
-    const inicio = document.getElementById("filtroInicio").value;
-    const fim = document.getElementById("filtroFim").value;
+    const inicio = document.getElementById("filtroInicio").value; // yyyy-mm-dd
+    const fim = document.getElementById("filtroFim").value;       // yyyy-mm-dd
 
-    const linhas = tabela.querySelectorAll("tr");
-    linhas.forEach(linha => {
+    tabela.querySelectorAll("tr").forEach(linha => {
       const cols = linha.querySelectorAll("td");
-      if (cols.length) {
-        const dataEnvio = cols[5].innerText.split(" ")[0].split("/").reverse().join("-");
-        if ((inicio && dataEnvio < inicio) || (fim && dataEnvio > fim)) {
-          linha.style.display = "none";
-        } else {
-          linha.style.display = "";
-        }
+      if (!cols.length) return;
+      const dataBr = cols[5].innerText.split(" ")[0]; // dd/mm/aaaa
+      const dataISO = parseBRDateToISO(dataBr);
+
+      if ((inicio && dataISO < inicio) || (fim && dataISO > fim)) {
+        linha.style.display = "none";
+      } else {
+        linha.style.display = "";
       }
     });
   }
@@ -247,25 +301,23 @@ function editarCliente(botao) {
   function limparFiltro() {
     document.getElementById("filtroInicio").value = "";
     document.getElementById("filtroFim").value = "";
-    const linhas = tabela.querySelectorAll("tr");
-    linhas.forEach(linha => linha.style.display = "");
+    tabela.querySelectorAll("tr").forEach(linha => linha.style.display = "");
   }
 
+  // Exportar / Limpar histórico
   function exportarCSV() {
     let csv = "Nome,Valor,Vencimento,WhatsApp,Tipo,Data/Hora\n";
     tabela.querySelectorAll("tr").forEach(row => {
       const cols = row.querySelectorAll("td");
       if (cols.length) {
-        const data = Array.from(cols).map(td => td.innerText).join(",");
+        const data = Array.from(cols).map(td => `"${td.innerText.replace(/"/g,'""')}"`).join(",");
         csv += data + "\n";
       }
     });
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "historico.csv";
-    a.click();
+    a.href = url; a.download = "historico.csv"; a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -275,31 +327,13 @@ function editarCliente(botao) {
       salvarHistorico();
     }
   }
-
-function enviarMensagemCliente(botaoOuCard) {
-  const card = botaoOuCard.classList?.contains('cliente-card') ? botaoOuCard : botaoOuCard.parentElement;
-
-  const nome = card.querySelector(".nome").textContent;
-  const valor = card.querySelector(".valor").textContent;
-  const vencimento = card.querySelector(".vencimento").textContent;
-  const whatsapp = card.querySelector(".whats").textContent;
-
-  const vencDate = new Date(vencimento.split('/').reverse().join('-'));
-  const hoje = new Date();
-  const tipo = vencDate < new Date(hoje.toDateString()) ? "cobranca" : "lembrete";
-
-  const mensagem = tipo === "cobranca"
-    ? `Olá ${nome}, sua fatura de ${valor} venceu em ${vencimento}. Por favor, regularize o pagamento.`
-    : `Olá ${nome}, lembramos que sua fatura de ${valor} vence em ${vencimento}.`;
-
-  const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
-  window.open(url, "_blank");
-
-  const dataHora = new Date().toLocaleString("pt-BR");
-  renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
-  salvarHistorico();
-}
 </script>
+<script>
+  // Registro do Service Worker (PWA)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  }
+</script>
+
 </body>
 </html>
-
