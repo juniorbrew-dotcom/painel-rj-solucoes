@@ -7,54 +7,110 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0078D7">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f6f8; }
-    h2, h3 { color: #333; }
-    .form, .clientes, .historico {
-      background: #fff; padding: 15px; margin-bottom: 20px;
-      border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f6f8;
     }
-    label { display: block; margin-top: 10px; font-weight: bold; }
-    input {
-      width: 100%; padding: 8px; margin-top: 5px;
-      border: 1px solid #ccc; border-radius: 4px;
+    h2, h3 {
+      color: #333;
+    }
+    .form, .clientes, .historico, .modelos {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
     }
     button {
-      margin-top: 10px; padding: 8px 12px;
-      background: #0078D7; color: white;
-      border: none; border-radius: 4px; cursor: pointer;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
-    button:hover { background: #005fa3; }
+    button:hover {
+      background: #005fa3;
+    }
+    .btn-danger {
+      background: #d9534f;
+    }
+    .btn-danger:hover {
+      background: #b84541;
+    }
     .cliente-card {
-      border: 1px solid #ddd; padding: 10px;
-      margin-top: 10px; border-radius: 4px; background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      background: #fafafa;
     }
-    .cliente-card button + button { margin-left: 8px; }
-    .btn-danger { background: #d9534f; }
-    .btn-danger:hover { background: #b84541; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    .historico-buttons { margin-top: 10px; }
+    .cliente-card button + button {
+      margin-left: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    .historico-buttons {
+      margin-top: 10px;
+    }
     .filtro-historico {
-      display: flex; gap: 10px; margin-bottom: 10px;
-      flex-wrap: wrap; align-items: center;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      align-items: center;
     }
-    .filtro-historico label { font-weight: bold; }
-    .filtro-historico input { padding: 4px; }
-    .filtro-historico button { padding: 5px 10px; cursor: pointer; }
-
-    /* Responsividade para celular */
+    .filtro-historico label {
+      font-weight: bold;
+    }
+    .filtro-historico input {
+      padding: 4px;
+    }
+    .filtro-historico button {
+      padding: 5px 10px;
+      cursor: pointer;
+    }
     @media (max-width: 600px) {
-      input, button, select {
+      input, button, select, textarea {
         width: 100% !important;
         box-sizing: border-box;
       }
-      .cliente-card { font-size: 14px; }
+      .cliente-card {
+        font-size: 14px;
+      }
       table, thead, tbody, th, td, tr {
         display: block;
         width: 100%;
       }
-      thead { display: none; }
+      thead {
+        display: none;
+      }
       tr {
         margin-bottom: 15px;
         border: 1px solid #ddd;
@@ -78,10 +134,8 @@
   </style>
 </head>
 <body>
-
   <h2>Painel de Cobrança WhatsApp</h2>
-
-  <div class="form">
+    <div class="form">
     <label>Nome do Cliente:</label>
     <input type="text" id="nome">
 
@@ -100,8 +154,26 @@
   <div class="clientes" id="listaClientes">
     <h3>Clientes cadastrados</h3>
   </div>
+    <div class="modelos">
+    <h3>Modelos de Mensagem</h3>
 
-  <div class="historico">
+    <label for="tipoModelo">Tipo:</label>
+    <select id="tipoModelo" onchange="carregarModelo()">
+      <option value="lembrete">Lembrete</option>
+      <option value="cobranca">Cobrança</option>
+    </select>
+
+    <label for="modeloSelecionado">Escolha um modelo:</label>
+    <select id="modeloSelecionado" onchange="preencherTextoModelo()">
+      <!-- Preenchido via JavaScript -->
+    </select>
+
+    <label for="mensagemEditavel">Mensagem:</label>
+    <textarea id="mensagemEditavel" rows="10" style="width:100%;"></textarea>
+
+    <button onclick="enviarMensagemEditada()">Enviar pelo WhatsApp</button>
+  </div>
+    <div class="historico">
     <h3>Histórico de Envios</h3>
 
     <div class="filtro-historico">
@@ -158,6 +230,7 @@
     const historicoSalvo = JSON.parse(localStorage.getItem("historico")) || [];
     clientesSalvos.forEach(c => renderCliente(c.nome, c.valor, c.vencimento, c.whatsapp, c.tipo));
     historicoSalvo.forEach(h => renderHistorico(h.nome, h.valor, h.vencimento, h.whatsapp, h.tipo, h.data));
+    carregarModelo();
   };
 
   // Adicionar cliente
@@ -199,11 +272,11 @@
       <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
       <button onclick="editarCliente(this)">Editar</button>
       <button onclick="excluirCliente(this)" class="btn-danger">Excluir</button>
+      <button onclick="selecionarCliente(this)">Editar Mensagem</button>
     `;
     lista.appendChild(card);
   }
-
-  // Editar cliente
+      // Editar cliente
   function editarCliente(botao) {
     const card = botao.parentElement;
     const valorSpan = card.querySelector(".valor");
@@ -266,7 +339,8 @@
     });
     localStorage.setItem("clientes", JSON.stringify(clientes));
   }
-        // Histórico
+
+  // Histórico
   function renderHistorico(nome, valor, vencimento, whatsapp, tipo, data) {
     const linha = document.createElement("tr");
     linha.innerHTML = `
@@ -298,70 +372,6 @@
     localStorage.setItem("historico", JSON.stringify(historico));
   }
 
-  // Enviar mensagem com modelo personalizado
-  function enviarMensagemCliente(botao) {
-    const card = botao.parentElement;
-    const nome = card.querySelector(".nome").textContent;
-    const valor = card.querySelector(".valor").textContent;
-    const vencimento = card.querySelector(".vencimento").textContent;
-    const whatsapp = onlyDigits(card.querySelector(".whats").textContent);
-
-    const hoje = startOfDay(new Date());
-    const dataVenc = startOfDay(new Date(parseBRDateToISO(vencimento)));
-
-    let mensagem = "";
-
-    if (dataVenc >= hoje) {
-      mensagem = `LEMBRETE DE VENCIMENTO DE MENSALIDADE
-
-Prezado(a) cliente ${nome},
-Gostaríamos de lembrar que a mensalidade referente ao uso do sistema fornecido pela BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA está próxima do vencimento.
-
-Valor: ${valor}
-Vencimento: ${vencimento}
-
-CHAVE PIX (CNPJ): 11370535000170
-
-Para facilitar, seguem os dados para pagamento. Caso já tenha efetuado, por favor desconsidere este aviso.
-Envie o comprovante para:
-WhatsApp: (73) 99927-2550
-E-mail: rjsolucoes@hotmail.com
-
-Agradecemos pela parceria e confiança.
-
-Atenciosamente,
-BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
-    } else {
-      mensagem = `AVISO DE MENSALIDADE EM ATRASO
-
-Prezado(a) cliente ${nome},
-Identificamos pendência na mensalidade referente ao uso do sistema fornecido pela BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA.
-
-Valor: ${valor}
-Vencimento: ${vencimento}
-
-CHAVE PIX (CNPJ): 11370535000170
-
-Solicitamos a regularização imediata para manter a continuidade dos serviços e evitar encargos adicionais.
-Envie o comprovante para:
-WhatsApp: (73) 99927-2550
-E-mail: rjsolucoes@hotmail.com
-
-Agradecemos pela atenção.
-
-Atenciosamente,
-BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
-    }
-
-    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, "_blank");
-
-    const tipo = dataVenc < hoje ? "cobranca" : "lembrete";
-    const dataHora = new Date().toLocaleString("pt-BR");
-    renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
-    salvarHistorico();
-  }
-
   // Filtro por data
   function filtrarHistorico() {
     const inicio = document.getElementById("filtroInicio").value;
@@ -387,7 +397,6 @@ BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
     tabela.querySelectorAll("tr").forEach(linha => linha.style.display = "");
   }
 
-  // Exportar CSV
   function exportarCSV() {
     let csv = "Nome,Valor,Vencimento,WhatsApp,Tipo,Data/Hora\n";
     tabela.querySelectorAll("tr").forEach(row => {
@@ -412,13 +421,213 @@ BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
       salvarHistorico();
     }
   }
-</script>
+      // Modelos prontos
+  const modelos = {
+    lembrete: [
+      {
+        nome: "Lembrete padrão",
+        texto: `Olá {NOME}, sua mensalidade de {VALOR} vence em {VENCIMENTO}.  
+PIX: 11370535000170  
+Envie o comprovante para (73) 99927-2550`
+      },
+      {
+        nome: "Lembrete cordial",
+        texto: `Prezado(a) {NOME}, estamos passando para lembrar que sua mensalidade de {VALOR} vence em {VENCIMENTO}.  
+Caso já tenha efetuado o pagamento, por favor desconsidere este aviso.  
+PIX: 11370535000170`
+      }
+    ],
+    cobranca: [
+      {
+        nome: "Cobrança formal",
+        texto: `Prezado(a) {NOME}, identificamos pendência na mensalidade de {VALOR}, vencida em {VENCIMENTO}.  
+Solicitamos a regularização imediata.  
+PIX: 11370535000170`
+      },
+      {
+        nome: "Cobrança direta",
+        texto: `Olá {NOME}, sua mensalidade de {VALOR} venceu em {VENCIMENTO}.  
+Por favor, envie o comprovante via WhatsApp: (73) 99927-2550  
+PIX: 11370535000170`
+      }
+    ]
+  };
 
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  // Carregar modelos no seletor
+  function carregarModelo() {
+    const tipo = document.getElementById("tipoModelo").value;
+    const seletor = document.getElementById("modeloSelecionado");
+    seletor.innerHTML = "";
+
+    modelos[tipo].forEach((m, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = m.nome;
+      seletor.appendChild(opt);
+    });
+
+    preencherTextoModelo();
+  }
+
+  // Preencher texto com dados do cliente
+  function preencherTextoModelo() {
+    const tipo = document.getElementById("tipoModelo").value;
+    const index = document.getElementById("modeloSelecionado").value;
+    const modelo = modelos[tipo][index];
+
+    const cliente = obterClienteSelecionado();
+    if (!cliente) {
+      document.getElementById("mensagemEditavel").value = modelo.texto;
+      return;
+    }
+
+    const texto = modelo.texto
+      .replaceAll("{NOME}", cliente.nome)
+      .replaceAll("{VALOR}", cliente.valor)
+      .replaceAll("{VENCIMENTO}", cliente.vencimento);
+
+    document.getElementById("mensagemEditavel").value = texto;
+  }
+
+  // Enviar mensagem editada
+  function enviarMensagemEditada() {
+    const cliente = obterClienteSelecionado();
+    if (!cliente) {
+      alert("Selecione um cliente primeiro.");
+      return;
+    }
+
+    const texto = document.getElementById("mensagemEditavel").value;
+    const whatsapp = onlyDigits(cliente.whatsapp);
+    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank");
+
+    const tipo = startOfDay(new Date(parseBRDateToISO(cliente.vencimento))) < startOfDay(new Date()) ? "cobranca" : "lembrete";
+    const dataHora = new Date().toLocaleString("pt-BR");
+    renderHistorico(cliente.nome, cliente.valor, cliente.vencimento, cliente.whatsapp, tipo, dataHora);
+    salvarHistorico();
+  }
+
+  // Selecionar cliente para edição de mensagem
+  let clienteSelecionado = null;
+  function obterClienteSelecionado() {
+    return clienteSelecionado;
+  }
+
+  function selecionarCliente(botao) {
+    const card = botao.parentElement;
+    clienteSelecionado = {
+      nome: card.querySelector(".nome").textContent,
+      valor: card.querySelector(".valor").textContent,
+      vencimento: card.querySelector(".vencimento").textContent,
+      whatsapp: card.querySelector(".whats").textContent
+    };
+    preencherTextoModelo();
   }
 </script>
+  <div class="modelos">
+  <h3>Meus Modelos Personalizados</h3>
 
-</body>
-</html>
+  <label for="nomeModelo">Nome do Modelo:</label>
+  <input type="text" id="nomeModelo">
+
+  <label for="textoModelo">Texto do Modelo:</label>
+  <textarea id="textoModelo" rows="6"></textarea>
+
+  <button onclick="salvarModeloPersonalizado()">Salvar Modelo</button>
+
+  <div id="listaModelosPersonalizados"></div>
+</div>
+  <script>
+  // Salvar modelo personalizado
+  function salvarModeloPersonalizado() {
+    const nome = document.getElementById("nomeModelo").value.trim();
+    const texto = document.getElementById("textoModelo").value.trim();
+
+    if (!nome || !texto) {
+      alert("Preencha o nome e o texto do modelo.");
+      return;
+    }
+
+    const modelosSalvos = JSON.parse(localStorage.getItem("modelosPersonalizados")) || [];
+    modelosSalvos.push({ nome, texto });
+    localStorage.setItem("modelosPersonalizados", JSON.stringify(modelosSalvos));
+
+    document.getElementById("nomeModelo").value = "";
+    document.getElementById("textoModelo").value = "";
+
+    listarModelosPersonalizados();
+  }
+
+  // Listar modelos salvos
+  function listarModelosPersonalizados() {
+    const container = document.getElementById("listaModelosPersonalizados");
+    container.innerHTML = "";
+
+    const modelosSalvos = JSON.parse(localStorage.getItem("modelosPersonalizados")) || [];
+
+    modelosSalvos.forEach((modelo, index) => {
+      const div = document.createElement("div");
+      div.style.border = "1px solid #ccc";
+      div.style.padding = "10px";
+      div.style.marginTop = "10px";
+      div.style.borderRadius = "5px";
+      div.style.background = "#f9f9f9";
+
+      div.innerHTML = `
+        <strong>${modelo.nome}</strong>
+        <pre style="white-space: pre-wrap; margin-top: 5px;">${modelo.texto}</pre>
+        <button onclick="aplicarModeloPersonalizado(${index})">Selecionar</button>
+        <button onclick="editarModeloPersonalizado(${index})">Editar</button>
+        <button onclick="excluirModeloPersonalizado(${index})" class="btn-danger">Excluir</button>
+      `;
+
+      container.appendChild(div);
+    });
+  }
+
+  // Aplicar modelo personalizado
+  function aplicarModeloPersonalizado(index) {
+    const modelosSalvos = JSON.parse(localStorage.getItem("modelosPersonalizados")) || [];
+    const modelo = modelosSalvos[index];
+
+    const cliente = obterClienteSelecionado();
+    let texto = modelo.texto;
+
+    if (cliente) {
+      texto = texto
+        .replaceAll("{NOME}", cliente.nome)
+        .replaceAll("{VALOR}", cliente.valor)
+        .replaceAll("{VENCIMENTO}", cliente.vencimento);
+    }
+
+    document.getElementById("mensagemEditavel").value = texto;
+  }
+
+  // Editar modelo personalizado
+  function editarModeloPersonalizado(index) {
+    const modelosSalvos = JSON.parse(localStorage.getItem("modelosPersonalizados")) || [];
+    const modelo = modelosSalvos[index];
+
+    document.getElementById("nomeModelo").value = modelo.nome;
+    document.getElementById("textoModelo").value = modelo.texto;
+
+    modelosSalvos.splice(index, 1);
+    localStorage.setItem("modelosPersonalizados", JSON.stringify(modelosSalvos));
+    listarModelosPersonalizados();
+  }
+
+  // Excluir modelo personalizado
+  function excluirModeloPersonalizado(index) {
+    if (confirm("Deseja excluir este modelo?")) {
+      const modelosSalvos = JSON.parse(localStorage.getItem("modelosPersonalizados")) || [];
+      modelosSalvos.splice(index, 1);
+      localStorage.setItem("modelosPersonalizados", JSON.stringify(modelosSalvos));
+      listarModelosPersonalizados();
+    }
+  }
+
+  // Inicializar lista ao carregar
+  window.addEventListener("load", listarModelosPersonalizados);
+</script>
+  
