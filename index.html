@@ -2,29 +2,43 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel de Cobrança WhatsApp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Cobrança RJ Soluções</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0078D7">
-  <link rel="icon" href="icon-192.png">
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; }
-    h2, h3 { text-align: center; color: #0078D7; }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f6f8; }
+    h2, h3 { color: #333; }
     .form, .clientes, .historico {
-      background-color: #fff; padding: 20px; border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto;
+      background: #fff; padding: 15px; margin-bottom: 20px;
+      border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     label { display: block; margin-top: 10px; font-weight: bold; }
-    input { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-    button { margin-top: 15px; padding: 10px 20px; background-color: #0078D7; color: white; border: none; border-radius: 8px; cursor: pointer; }
-    button:hover { background-color: #005fa3; }
-    .cliente-card { background-color: #fefefe; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-top: 10px; }
-    .cliente-card p { margin: 5px 0; }
-    .cliente-card button { margin-top: 10px; width: 100%; }
+    input {
+      width: 100%; padding: 8px; margin-top: 5px;
+      border: 1px solid #ccc; border-radius: 4px;
+    }
+    button {
+      margin-top: 10px; padding: 8px 12px;
+      background: #0078D7; color: white;
+      border: none; border-radius: 4px; cursor: pointer;
+    }
+    button:hover { background: #005fa3; }
+    .cliente-card {
+      border: 1px solid #ddd; padding: 10px;
+      margin-top: 10px; border-radius: 4px; background: #fafafa;
+    }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-    th { background-color: #0078D7; color: white; }
-    .historico-buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .historico-buttons { margin-top: 10px; }
+    .filtro-historico {
+      display: flex; gap: 10px; margin-bottom: 10px;
+      flex-wrap: wrap; align-items: center;
+    }
+    .filtro-historico label { font-weight: bold; }
+    .filtro-historico input { padding: 4px; }
+    .filtro-historico button { padding: 5px 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -50,37 +64,18 @@
   <div class="clientes" id="listaClientes">
     <h3>Clientes cadastrados</h3>
   </div>
-<div class="historico">
-  <h3>Histórico de Envios</h3>
 
-  <!-- Filtro por data -->
-  <div class="filtro-historico">
-    <label>De: <input type="date" id="filtroInicio"></label>
-    <label>Até: <input type="date" id="filtroFim"></label>
-    <button onclick="filtrarHistorico()">Filtrar</button>
-    <button onclick="limparFiltro()">Limpar</button>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Valor</th>
-        <th>Vencimento</th>
-        <th>WhatsApp</th>
-        <th>Tipo</th>
-        <th>Data/Hora</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaHistorico"></tbody>
-  </table>
-  <div class="historico-buttons">
-    <button onclick="exportarCSV()">Exportar CSV</button>
-    <button onclick="limparHistorico()">Limpar Histórico</button>
-  </div>
-</div>
   <div class="historico">
     <h3>Histórico de Envios</h3>
+
+    <!-- Filtro por data -->
+    <div class="filtro-historico">
+      <label>De: <input type="date" id="filtroInicio"></label>
+      <label>Até: <input type="date" id="filtroFim"></label>
+      <button onclick="filtrarHistorico()">Filtrar</button>
+      <button onclick="limparFiltro()">Limpar</button>
+    </div>
+
     <table>
       <thead>
         <tr>
@@ -99,11 +94,10 @@
       <button onclick="limparHistorico()">Limpar Histórico</button>
     </div>
   </div>
-  <script>
+<script>
   const lista = document.getElementById("listaClientes");
   const tabela = document.getElementById("tabelaHistorico");
 
-  // Carregar dados salvos ao abrir
   window.onload = () => {
     const clientesSalvos = JSON.parse(localStorage.getItem("clientes")) || [];
     const historicoSalvo = JSON.parse(localStorage.getItem("historico")) || [];
@@ -115,8 +109,8 @@
     const clientes = [];
     document.querySelectorAll(".cliente-card").forEach(card => {
       const nome = card.querySelector("p:nth-child(1)").innerText.replace("Nome: ", "");
-      const valor = card.querySelector("p:nth-child(2)").innerText.replace("Valor: ", "");
-      const vencimento = card.querySelector("p:nth-child(3)").innerText.replace("Vencimento: ", "");
+      const valor = card.querySelector(".valor").innerText;
+      const vencimento = card.querySelector(".vencimento").innerText;
       const whatsapp = card.querySelector("p:nth-child(4)").innerText.replace("WhatsApp: ", "");
       const hoje = new Date();
       const vencDate = new Date(vencimento.split("/").reverse().join("-"));
@@ -177,12 +171,36 @@
     card.className = "cliente-card";
     card.innerHTML = `
       <p><strong>Nome:</strong> ${nome}</p>
-      <p><strong>Valor:</strong> ${valor}</p>
-      <p><strong>Vencimento:</strong> ${vencimento}</p>
+      <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
+      <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
       <p><strong>WhatsApp:</strong> ${whatsapp}</p>
       <button onclick="enviarMensagem('${nome}', '${valor}', '${vencimento}', '${whatsapp}', '${tipo}')">Enviar Mensagem</button>
+      <button onclick="editarCliente(this)">Editar</button>
     `;
     lista.appendChild(card);
+  }
+
+  function editarCliente(botao) {
+    const card = botao.parentElement;
+    const valorSpan = card.querySelector(".valor");
+    const vencSpan = card.querySelector(".vencimento");
+
+    valorSpan.innerHTML = `<input type="number" value="${valorSpan.innerText.replace(/[^\d,.-]/g, '')}">`;
+    vencSpan.innerHTML = `<input type="date" value="${vencSpan.innerText.split('/').reverse().join('-')}">`;
+
+    botao.textContent = "Salvar";
+    botao.onclick = function() {
+      const novoValor = parseFloat(valorSpan.querySelector("input").value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const novoVenc = vencSpan.querySelector("input").value.split("-").reverse().join("/");
+
+      valorSpan.textContent = novoValor;
+      vencSpan.textContent = novoVenc;
+
+      salvarClientes();
+
+      botao.textContent = "Editar";
+      botao.onclick = function() { editarCliente(botao); };
+    };
   }
 
   function renderHistorico(nome, valor, vencimento, whatsapp, tipo, data) {
@@ -198,81 +216,68 @@
     tabela.appendChild(linha);
   }
 
-  function enviarMensagem(nome, valor, vencimento, numero, tipo) {
-    let mensagem = tipo === "cobranca" ? 
-`AVISO DE MENSALIDADE EM ATRASO
+  function filtrarHistorico() {
+    const inicio = document.getElementById("filtroInicio").value;
+    const fim = document.getElementById("filtroFim").value;
 
-Prezado(a) cliente ${nome},
-Identificamos pendência na mensalidade referente ao uso do sistema fornecido pela BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA.
+    const linhas = tabela.querySelectorAll("tr");
+    linhas.forEach(linha => {
+      const cols = linha.querySelectorAll("td");
+      if (cols.length) {
+        const dataEnvio = cols[5].innerText.split(" ")[0].split("/").reverse().join("-");
+        if ((inicio && dataEnvio < inicio) || (fim && dataEnvio > fim)) {
+          linha.style.display = "none";
+        } else {
+          linha.style.display = "";
+        }
+      }
+    });
+  }
 
-Valor: ${valor}
-Vencimento: ${vencimento}
-
-CHAVE PIX (CNPJ): 11370535000170
-
-Solicitamos a regularização imediata para manter a continuidade dos serviços e evitar encargos adicionais.
-Envie o comprovante para:
-WhatsApp: (73) 99927-2550
-E-mail: rjsolucoes@hotmail.com
-
-Agradecemos pela atenção.
-
-Atenciosamente,
-BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`
-:
-`LEMBRETE DE VENCIMENTO DE MENSALIDADE
-
-Prezado(a) cliente ${nome},
-Gostaríamos de lembrar que a mensalidade referente ao uso do sistema fornecido pela BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA está próxima do vencimento.
-
-Valor: ${valor}
-Vencimento: ${vencimento}
-
-CHAVE PIX (CNPJ): 11370535000170
-
-Para facilitar, seguem os dados para pagamento. Caso já tenha efetuado, por favor desconsidere este aviso.
-Envie o comprovante para:
-WhatsApp: (73) 99927-2550
-E-mail: rjsolucoes@hotmail.com
-
-Agradecemos pela parceria e confiança.
-
-Atenciosamente,
-BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
-
-    window.open(`https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`, "_blank");
-
-    renderHistorico(nome, valor, vencimento, numero, tipo, new Date().toLocaleString('pt-BR'));
-    salvarHistorico();
+  function limparFiltro() {
+    document.getElementById("filtroInicio").value = "";
+    document.getElementById("filtroFim").value = "";
+    const linhas = tabela.querySelectorAll("tr");
+    linhas.forEach(linha => linha.style.display = "");
   }
 
   function exportarCSV() {
     let csv = "Nome,Valor,Vencimento,WhatsApp,Tipo,Data/Hora\n";
-    const linhas = tabela.querySelectorAll("tr");
-    linhas.forEach(linha => {
-      const colunas = linha.querySelectorAll("td");
-      if (colunas.length) {
-        const dados = Array.from(colunas).map(td => `"${td.innerText}"`).join(",");
-        csv += dados + "\n";
+    tabela.querySelectorAll("tr").forEach(row => {
+      const cols = row.querySelectorAll("td");
+      if (cols.length) {
+        const data = Array.from(cols).map(td => td.innerText).join(",");
+        csv += data + "\n";
       }
     });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "historico-envios.csv";
-    link.click();
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "historico.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   function limparHistorico() {
-    tabela.innerHTML = "";
-    localStorage.removeItem("historico");
+    if (confirm("Tem certeza que deseja limpar o histórico?")) {
+      tabela.innerHTML = "";
+      salvarHistorico();
+    }
+  }
+
+  function enviarMensagem(nome, valor, vencimento, whatsapp, tipo) {
+    const mensagem = tipo === "cobranca"
+      ? `Olá ${nome}, sua fatura de ${valor} venceu em ${vencimento}. Por favor, regularize o pagamento.`
+      : `Olá ${nome}, lembramos que sua fatura de ${valor} vence em ${vencimento}.`;
+
+    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, "_blank");
+
+    const dataHora = new Date().toLocaleString("pt-BR");
+    renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
+    salvarHistorico();
   }
 </script>
 </body>
 </html>
-<div class="filtro-historico">
-  <label>De: <input type="date" id="filtroInicio"></label>
-  <label>Até: <input type="date" id="filtroFim"></label>
-  <button onclick="filtrarHistorico()">Filtrar</button>
-</div>
-
