@@ -154,19 +154,19 @@
   }
 
   function renderCliente(nome, valor, vencimento, whatsapp, tipo) {
-    const card = document.createElement("div");
-    card.className = "cliente-card";
-    card.innerHTML = `
-      <p><strong>Nome:</strong> <span class="nome">${nome}</span></p>
-      <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
-      <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
-      <p><strong>WhatsApp:</strong> <span class="whats">${whatsapp}</span></p>
-      <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
-      <button onclick="editarCliente(this)">Editar</button>
-      <button onclick="excluirCliente(this)" class="btn-danger">Excluir</button>
-    `;
-    lista.appendChild(card);
-  }
+  const card = document.createElement("div");
+  card.className = "cliente-card";
+  card.innerHTML = `
+    <p><strong>Nome:</strong> <span class="nome">${nome}</span></p>
+    <p><strong>Valor:</strong> <span class="valor">${valor}</span></p>
+    <p><strong>Vencimento:</strong> <span class="vencimento">${vencimento}</span></p>
+    <p><strong>WhatsApp:</strong> <span class="whats">${whatsapp}</span></p>
+    <button onclick="enviarMensagemCliente(this)">Enviar Mensagem</button>
+    <button onclick="editarCliente(this)">Editar</button>
+    <button onclick="excluirCliente(this)" style="background:#d9534f">Excluir</button>
+  `;
+  lista.appendChild(card);
+}
 
   function editarCliente(botao) {
     const card = botao.parentElement;
@@ -337,3 +337,4 @@
 
 </body>
 </html>
+
