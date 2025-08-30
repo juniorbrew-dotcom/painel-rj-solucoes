@@ -299,27 +299,73 @@
     localStorage.setItem("historico", JSON.stringify(historico));
   }
 
-  // Enviar mensagem e registrar no histórico
-  function enviarMensagemCliente(botao) {
-    const card = botao.parentElement;
-    const nome = card.querySelector(".nome").textContent;
-    const valor = card.querySelector(".valor").textContent;
-    const vencimento = card.querySelector(".vencimento").textContent;
-    const whatsapp = onlyDigits(card.querySelector(".whats").textContent);
+ // Enviar mensagem e registrar no histórico
+function enviarMensagemCliente(botao) {
+  const card = botao.parentElement;
+  const nome = card.querySelector(".nome").textContent;
+  const valor = card.querySelector(".valor").textContent;
+  const vencimento = card.querySelector(".vencimento").textContent;
+  const whatsapp = onlyDigits(card.querySelector(".whats").textContent);
 
-    const tipo = startOfDay(new Date(parseBRDateToISO(vencimento))) < startOfDay(new Date()) ? "cobranca" : "lembrete";
+  const hoje = startOfDay(new Date());
+  const dataVenc = startOfDay(new Date(parseBRDateToISO(vencimento)));
 
-    const mensagem = tipo === "cobranca"
-      ? `Olá ${nome}, sua fatura de ${valor} venceu em ${vencimento}. Por favor, regularize o pagamento.`
-      : `Olá ${nome}, lembramos que sua fatura de ${valor} vence em ${vencimento}.`;
+  let mensagem = "";
 
-    const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, "_blank");
+  if (dataVenc >= hoje) {
+    // Modelo 1 - Lembrete
+    mensagem = `LEMBRETE DE VENCIMENTO DE MENSALIDADE
 
-    const dataHora = new Date().toLocaleString("pt-BR");
-    renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
-    salvarHistorico();
+Prezado(a) cliente ${nome},
+Gostaríamos de lembrar que a mensalidade referente ao uso do sistema fornecido pela BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA está próxima do vencimento.
+
+Valor: ${valor}
+Vencimento: ${vencimento}
+
+CHAVE PIX (CNPJ): 11370535000170
+
+Para facilitar, seguem os dados para pagamento. Caso já tenha efetuado, por favor desconsidere este aviso.
+Envie o comprovante para:
+WhatsApp: (73) 99927-2550
+E-mail: rjsolucoes@hotmail.com
+
+Agradecemos pela parceria e confiança.
+
+Atenciosamente,
+BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
+  } else {
+    // Modelo 2 - Atraso
+    mensagem = `AVISO DE MENSALIDADE EM ATRASO
+
+Prezado(a) cliente ${nome},
+Identificamos pendência na mensalidade referente ao uso do sistema fornecido pela BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA.
+
+Valor: ${valor}
+Vencimento: ${vencimento}
+
+CHAVE PIX (CNPJ): 11370535000170
+
+Solicitamos a regularização imediata para manter a continuidade dos serviços e evitar encargos adicionais.
+Envie o comprovante para:
+WhatsApp: (73) 99927-2550
+E-mail: rjsolucoes@hotmail.com
+
+Agradecemos pela atenção.
+
+Atenciosamente,
+BRAGA COMÉRCIO E SERVIÇOS DE INFORMÁTICA LTDA`;
   }
+
+  // Abre o WhatsApp com a mensagem
+  const url = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, "_blank");
+
+  // Salva no histórico
+  const tipo = dataVenc < hoje ? "cobranca" : "lembrete";
+  const dataHora = new Date().toLocaleString("pt-BR");
+  renderHistorico(nome, valor, vencimento, whatsapp, tipo, dataHora);
+  salvarHistorico();
+}
 
   // Filtro por data no histórico
   function filtrarHistorico() {
@@ -384,3 +430,4 @@
 
 </body>
 </html>
+
