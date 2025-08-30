@@ -49,4 +49,22 @@ self.addEventListener("fetch", event => {
       return response || fetchPromise;
     })
   );
+
 });
+function filtrarHistorico() {
+  const inicio = document.getElementById("filtroInicio").value;
+  const fim = document.getElementById("filtroFim").value;
+
+  const linhas = tabela.querySelectorAll("tr");
+  linhas.forEach(linha => {
+    const cols = linha.querySelectorAll("td");
+    if (cols.length) {
+      const dataEnvio = cols[5].innerText.split(" ")[0].split("/").reverse().join("-");
+      if ((inicio && dataEnvio < inicio) || (fim && dataEnvio > fim)) {
+        linha.style.display = "none";
+      } else {
+        linha.style.display = "";
+      }
+    }
+  });
+}
