@@ -266,7 +266,7 @@
     });
     localStorage.setItem("clientes", JSON.stringify(clientes));
   }
-      // Renderizar histórico
+    // Renderizar histórico
   function renderHistorico(nome, valor, vencimento, whatsapp, tipo, data) {
     const linha = document.createElement("tr");
     linha.innerHTML = `
@@ -377,11 +377,10 @@
 
 <!-- Registro do Service Worker para PWA -->
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js').catch(() => {});
-}
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  }
 </script>
 
 </body>
 </html>
-
